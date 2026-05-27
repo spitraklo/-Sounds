@@ -5,37 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body { background: #111; color: white; font-family: Arial; text-align: center; padding: 20px; }
-button { padding: 12px 20px; margin: 10px; font-size: 18px; border: none; border-radius: 8px; background: #1db954; color: white; }
-#songName { margin: 20px; font-size: 20px; }
+#songName { margin: 20px 0 5px; font-size: 20px; font-weight: bold; }
+#artistName { margin: 0 0 20px; font-size: 16px; color: #aaa; }
+button { padding: 12px 20px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; background: #1db954; color: white; cursor: pointer; }
 </style>
 </head>
 <body>
 <h1>My Playlist</h1>
 <div id="songName">Loading...</div>
-<audio id="player" controls></audio>
+<div id="artistName">SpitraKlo</div>
+<audio id="player" controlsList="nodownload nofullscreen noremoteplayback"></audio>
 <br>
 <button onclick="nextSong()">Next Song</button>
 
 <script>
 const songs = [
   "Mungu Wangu.mp3",
-  "Na Ku Penda Klo 1.mp3",
-  "Na Ku Penda Klo.mp3", 
+  "Na Ku Penda Kio 1.mp3",
+  "Na Ku Penda Kio.mp3",
   "Na Ku Penda.mp3"
 ];
+
 let current = 0;
 const player = document.getElementById('player');
 const songName = document.getElementById('songName');
 
 function playSong() {
   player.src = songs[current];
-  songName.textContent = songs[current].replace('.mp3','');
+  songName.textContent = songs[current].replace('.mp3', '');
   player.play();
 }
+
 function nextSong() {
   current = (current + 1) % songs.length;
   playSong();
 }
+
 player.onended = nextSong;
 playSong();
 </script>
