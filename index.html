@@ -1,22 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>My Music</title>
+<title>SpitraKlo Music</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { background: #111; color: white; font-family: Arial; text-align: center; padding: 20px; }
-#songName { margin: 20px 0 5px; font-size: 20px; font-weight: bold; }
-#artistName { margin: 0 0 20px; font-size: 16px; color: #aaa; }
-button { padding: 12px 20px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; background: #1db954; color: white; cursor: pointer; }
+body { background: #0a0a0a; color: white; font-family: Arial; max-width: 500px; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; font-size: 24px; margin-bottom: 5px; }
+.artist { text-align: center; color: #aaa; font-size: 14px; margin-bottom: 20px; }
+audio { width: 100%; margin: 15px 0; }
+.controls { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+button { padding: 12px 18px; border: none; border-radius: 8px; background: #1db954; color: white; font-size: 16px; cursor: pointer; }
+button.active { background: #ff6b6b; }
+.playlist { margin-top: 25px; }
+.song { padding: 12px; margin: 5px 0; background: #1a1a1a; border-radius: 6px; cursor: pointer; }
+.song.active { background: #1db954; color: black; font-weight: bold; }
 </style>
 </head>
 <body>
 <h1>My Playlist</h1>
-<div id="songName">Loading...</div>
-<div id="artistName">SpitraKlo</div>
+<div class="artist">SpitraKlo</div>
+
+<div id="nowPlaying" style="text-align:center; font-size:18px; margin:10px 0;">Loading...</div>
 <audio id="player" controlsList="nodownload nofullscreen noremoteplayback"></audio>
-<br>
-<button onclick="nextSong()">Next Song</button>
+
+<div class="controls">
+  <button onclick="prevSong()">⏮ Prev</button>
+  <button id="repeatBtn" onclick="toggleRepeat()">🔁</button>
+  <button onclick="nextSong()">Next ⏭</button>
+</div>
+
+<div class="playlist" id="playlist"></div>
 
 <script>
 const songs = [
@@ -27,12 +40,25 @@ const songs = [
 ];
 
 let current = 0;
+let repeat = false;
 const player = document.getElementById('player');
-const songName = document.getElementById('songName');
+const nowPlaying = document.getElementById('nowPlaying');
+const playlistDiv = document.getElementById('playlist');
+const repeatBtn = document.getElementById('repeatBtn');
+
+// Build playlist
+songs.forEach((song, i) => {
+  const div = document.createElement('div');
+  div.className = 'song';
+  div.textContent = song.replace('.mp3', '');
+  div.onclick = () => { current = i; playSong(); };
+  playlistDiv.appendChild(div);
+});
 
 function playSong() {
   player.src = songs[current];
-  songName.textContent = songs[current].replace('.mp3', '');
+  nowPlaying.textContent = songs[current].replace('.mp3', '');
+  updateActive();
   player.play();
 }
 
@@ -41,7 +67,30 @@ function nextSong() {
   playSong();
 }
 
-player.onended = nextSong;
+function prevSong() {
+  current = (current - 1 + songs.length) % songs.length;
+  playSong();
+}
+
+function toggleRepeat() {
+  repeat =!repeat;
+  repeatBtn.classList.toggle('active');
+}
+
+function updateActive() {
+  document.querySelectorAll('.song').forEach((el, i) => {
+    el.classList.toggle('active', i === current);
+  });
+}
+
+player.onended = () => {
+  if (repeat) {
+    player.play(); // repeat same song
+  } else {
+    nextSong(); // go to next
+  }
+};
+
 playSong();
 </script>
 </body>
