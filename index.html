@@ -1,3 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SpitraKlo Music</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { background: #0a0a0a; color: white; font-family: Arial; max-width: 500px; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; font-size: 24px; margin-bottom: 5px; }
+.artist { text-align: center; color: #aaa; font-size: 14px; margin-bottom: 20px; }
+audio { width: 100%; margin: 15px 0; }
+.controls { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+button { padding: 12px 18px; border: none; border-radius: 8px; background: #1db954; color: white; font-size: 16px; cursor: pointer; }
+button.active { background: #ff6b6b; }
+.playlist { margin-top: 25px; }
+.song { display: flex; align-items: center; padding: 10px; margin: 6px 0; background: #1a1a1a; border-radius: 6px; cursor: pointer; }
+.song.active { background: #1db954; color: black; }
+.song img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; margin-right: 12px; }
+.song.title { font-weight: bold; }
+.song.artist { font-size: 12px; color: #aaa; }
+</style>
+</head>
+<body>
+<h1>My Playlist</h1>
+<div class="artist">SpitraKlo</div>
+
+<div id="nowPlaying" style="text-align:center; font-size:18px; margin:10px 0;">Loading...</div>
+<div id="nowArtist" style="text-align:center; font-size:14px; color:#aaa; margin-bottom:10px;"></div>
+<audio id="player" controlsList="nodownload nofullscreen noremoteplayback"></audio>
+
+<div class="controls">
+  <button onclick="prevSong()">Prev</button>
+  <button id="repeatBtn" onclick="toggleRepeat()">Repeat</button>
+  <button onclick="nextSong()">Next</button>
+</div>
+
+<div class="playlist" id="playlist">Loading songs...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.5/dist/jsmediatags.min.js"></script>
+<script>
+let songs = [];
+let current = 0;
+let repeat = false;
+const player = document.getElementById('player');
+const nowPlaying = document.getElementById('nowPlaying');
+const nowArtist = document.getElementById('nowArtist');
+const playlistDiv = document.getElementById('playlist');
+const repeatBtn = document.getElementById('repeatBtn');
+
+fetch('https://api.github.com/repos/spitraklo/-Sounds/contents/')
+.then(res => res.json())
+.then(files => {
+    const mp3s = files.filter(f => f.name.endsWith('.mp3')).map(f => f.name);
+    const jpgs = files.filter(f => f.name.endsWith('.jpg') || f.name.endsWith('.png')).map(f => f.name);
+
+    songs = mp3s.map(mp3 => {
+      const base = mp3.replace('.mp3', '');
+      const cover = jpgs.find(j => j.replace(/\.(jpg|png)$/, '') === base) || '';
+      return {file: mp3, cover: cover, artist: 'Unknown Artist'};
+    });
+
+    if (songs.length === 0) {
+      playlistDiv.innerHTML = 'Upload MP3 files to your repo';
+      return;
+    }
+    loadTags(0);
+  });
+
 function loadTags(i) {
   if (i >= songs.length) {
     buildPlaylist();
@@ -5,7 +72,6 @@ function loadTags(i) {
     return;
   }
   const fileUrl = `https://raw.githubusercontent.com/spitraklo/-Sounds/main/${songs[i].file}`;
-
   jsmediatags.read(fileUrl, {
     onSuccess: function(tag) {
       if (tag.tags.artist) songs[i].artist = tag.tags.artist;
@@ -14,3 +80,51 @@ function loadTags(i) {
     onError: function() { loadTags(i + 1); }
   });
 }
+
+function buildPlaylist() {
+  playlistDiv.innerHTML = '';
+  songs.forEach((song, i) => {
+    const div = document.createElement('div');
+    div.className = 'song';
+    const imgSrc = song.cover? song.cover : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><rect width="50" height="50" fill="%23333"/></svg>';
+    div.innerHTML = `<img src="${imgSrc}"><div><div class="title">${song.file.replace('.mp3', '')}</div><div class="artist">${song.artist}</div></div>`;
+    div.onclick = () => { current = i; playSong(); };
+    playlistDiv.appendChild(div);
+  });
+}
+
+function playSong() {
+  player.src = `https://raw.githubusercontent.com/spitraklo/-Sounds/main/${songs[current].file}`;
+  nowPlaying.textContent = songs[current].file.replace('.mp3', '');
+  nowArtist.textContent = songs[current].artist;
+  updateActive();
+  player.play();
+}
+
+function nextSong() {
+  current = (current + 1) % songs.length;
+  playSong();
+}
+
+function prevSong() {
+  current = (current - 1 + songs.length) % songs.length;
+  playSong();
+}
+
+function toggleRepeat() {
+  repeat =!repeat;
+  repeatBtn.classList.toggle('active');
+}
+
+function updateActive() {
+  document.querySelectorAll('.song').forEach((el, i) => {
+    el.classList.toggle('active', i === current);
+  });
+}
+
+player.onended = () => {
+  if (repeat) { player.play(); } else { nextSong(); }
+};
+</script>
+</body>
+</html>
